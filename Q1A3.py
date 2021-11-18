@@ -16,8 +16,6 @@ def connectUniformed(path):
     # create a cursor object which will be used to execute sql statements
     cursor = connection.cursor()
 
-    # disabling automatic indexing
-    cursor.execute(' PRAGMA automatic_index=FALSE; ')
 
     # creating new tables without foreign keys or primary keys
     cursor.execute("CREATE TABLE 'CustomersNew' ('customer_id' TEXT, 'customer_postal_code' INTEGER);")
@@ -28,6 +26,10 @@ def connectUniformed(path):
     cursor.execute("ALTER TABLE CustomersNew RENAME TO Customers;")
     cursor.execute("ALTER TABLE Orders RENAME TO OrdersOriginal;")
     cursor.execute("ALTER TABLE OrdersNew RENAME TO Orders;")
+    
+    # disabling automatic indexing
+    cursor.execute(' PRAGMA automatic_index=FALSE; ')
+
     connection.commit()
 
     return
@@ -66,10 +68,8 @@ def connectUserOptimizied(path):
     connection.commit()
     return
 
-def closeUniform(path):
+def closeUniform():
     global connection, cursor
-    connection = sqlite3.connect(path)
-    cursor = connection.cursor()
 
     # cleaning up the tables and resetting the database
     cursor.execute("DROP TABLE Customers;")
@@ -117,11 +117,11 @@ def executeQuery():
     ORDER BY RANDOM()
     LIMIT 50;
     '''
+    cursor.execute(queryRandom)
+    inputPostal = cursor.fetchall()
     queryTime = 0
     # running the query 50 times and getting the average runtime
     for x in range(50):
-        cursor.execute(queryRandom)
-        inputPostal = cursor.fetchall()
         secondsBefore = time.time()
         cursor.execute(query, {"Postal": inputPostal[x][0]})
         secondsAfter = time.time()
@@ -133,7 +133,7 @@ def query():
     # Uniformed Small
     connectUniformed(dbSmall)
     executionTimeUniformSmall = executeQuery()
-    closeUniform(dbSmall)
+    closeUniform()
 
     # Self-optimized Small
     connectSelfOptimized(dbSmall)
@@ -148,7 +148,7 @@ def query():
      # Uniformed Medium
     connectUniformed(dbMedium)
     executionTimeUniformMedium = executeQuery()
-    closeUniform(dbMedium)
+    closeUniform()
 
     # Self-optimized Medium
     connectSelfOptimized(dbMedium)
@@ -163,7 +163,7 @@ def query():
      # Uniformed Large
     connectUniformed(dbLarge)
     executionTimeUniformLarge = executeQuery()
-    closeUniform(dbLarge)
+    closeUniform()
 
     # Self-optimized Large
     connectSelfOptimized(dbLarge)
