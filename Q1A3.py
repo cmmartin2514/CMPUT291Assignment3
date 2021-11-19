@@ -16,19 +16,20 @@ def connectUniformed(path):
     # create a cursor object which will be used to execute sql statements
     cursor = connection.cursor()
 
-
+    
     # creating new tables without foreign keys or primary keys
     cursor.execute("CREATE TABLE 'CustomersNew' ('customer_id' TEXT, 'customer_postal_code' INTEGER);")
     cursor.execute("CREATE TABLE 'OrdersNew' ('order_id' TEXT, 'customer_id' TEXT);")
     cursor.execute("INSERT INTO CustomersNew SELECT customer_id, customer_postal_code FROM Customers;")
     cursor.execute("INSERT INTO OrdersNew SELECT order_id, customer_id FROM Orders;")
-    cursor.execute("ALTER TABLE Customers RENAME TO CustomersOriginal;")
-    cursor.execute("ALTER TABLE CustomersNew RENAME TO Customers;")
-    cursor.execute("ALTER TABLE Orders RENAME TO OrdersOriginal;")
-    cursor.execute("ALTER TABLE OrdersNew RENAME TO Orders;")
-    
+    # swap names of tables
+    cursor.execute("ALTER TABLE Customers RENAME TO CustomersOriginal")
+    cursor.execute("ALTER TABLE CustomersNew RENAME TO Customers")
+    cursor.execute("ALTER TABLE Orders RENAME TO OrdersOriginal")
+    cursor.execute("ALTER TABLE OrdersNew RENAME TO Orders")
+
     # disabling automatic indexing
-    cursor.execute(' PRAGMA automatic_index=FALSE; ')
+    cursor.execute("PRAGMA automatic_index = FALSE")
 
     connection.commit()
 
@@ -60,9 +61,9 @@ def connectUserOptimizied(path):
     cursor = connection.cursor()
 
     # Creating indexes for the customers and orders tables
-    cursor.execute("CREATE INDEX CustomersIdx1 ON Customers(customer_id, customer_postal_code);")
-    cursor.execute("CREATE INDEX OrdersIdx1 ON Orders(order_id, customer_id);")
-    
+    cursor.execute("CREATE INDEX IF NOT EXISTS CustomersIdx1 ON Customers(customer_postal_code, customer_id);")
+    cursor.execute("CREATE INDEX IF NOT EXISTS OrdersIdx1 ON Orders(customer_id, order_id);")
+
     
     # commit the changes we have made so they are visible by any other connections
     connection.commit()
@@ -81,19 +82,8 @@ def closeUniform():
     connection.commit()
     connection.close()
 
-def closeSelf():
+def close():
     global connection, cursor
-
-    # commiting and closing the connection
-    connection.commit()
-    connection.close()
-
-def closeUser():
-    global connection, cursor
-
-    # cleaning up the indices created
-    cursor.execute("DROP INDEX CustomersIdx1;")
-    cursor.execute("DROP INDEX OrdersIdx1;")
 
     # commiting and closing the connection
     connection.commit()
@@ -108,24 +98,19 @@ def executeQuery():
     FROM Orders O
     WHERE O.customer_id IN (SELECT C.customer_id
                             FROM Customers C
-                            WHERE C.customer_postal_code = :Postal);'''
+                            WHERE C.customer_postal_code = (SELECT C.customer_postal_code
+                                                        FROM Customers C
+                                                        ORDER BY RANDOM()
+                                                        LIMIT 1));'''
     
-    # query to randomly generate 50 random postal codes
-    queryRandom = '''
-    SELECT C.customer_postal_code
-    FROM Customers C
-    ORDER BY RANDOM()
-    LIMIT 50;
-    '''
-    cursor.execute(queryRandom)
-    inputPostal = cursor.fetchall()
     queryTime = 0
+    secondsBefore = time.time()
     # running the query 50 times and getting the average runtime
     for x in range(50):
-        secondsBefore = time.time()
-        cursor.execute(query, {"Postal": inputPostal[x][0]})
-        secondsAfter = time.time()
-        queryTime += (secondsAfter-secondsBefore)*1000
+        # cursor.execute(query, {"Postal": inputPostal[x][0]})
+        cursor.execute(query)
+    secondsAfter = time.time()
+    queryTime += (secondsAfter-secondsBefore)*1000
     queryTime /= 50
     return queryTime
     
@@ -138,12 +123,12 @@ def query():
     # Self-optimized Small
     connectSelfOptimized(dbSmall)
     executionTimeSelfSmall = executeQuery()
-    closeSelf()
+    close()
 
     # User-optimized Small
     connectUserOptimizied(dbSmall)
     executionTimeUserSmall = executeQuery()
-    closeUser()
+    close()
 
      # Uniformed Medium
     connectUniformed(dbMedium)
@@ -153,12 +138,12 @@ def query():
     # Self-optimized Medium
     connectSelfOptimized(dbMedium)
     executionTimeSelfMedium = executeQuery()
-    closeSelf()
+    close()
 
     # User-optimized Medium
     connectUserOptimizied(dbMedium)
     executionTimeUserMedium = executeQuery()
-    closeUser()
+    close()
 
      # Uniformed Large
     connectUniformed(dbLarge)
@@ -168,12 +153,12 @@ def query():
     # Self-optimized Large
     connectSelfOptimized(dbLarge)
     executionTimeSelfLarge = executeQuery()
-    closeSelf()
+    close()
 
     # User-optimized Large
     connectUserOptimizied(dbLarge)
     executionTimeUserLarge = executeQuery()
-    closeUser()
+    close()
 
     
     smallVals = [executionTimeUniformSmall, executionTimeSelfSmall, executionTimeUserSmall]
