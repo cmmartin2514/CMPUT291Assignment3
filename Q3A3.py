@@ -67,6 +67,7 @@ def connectUserOptimizied(path):
     # Creating indexes for the customers and orders tables
     cursor.execute("CREATE INDEX IF NOT EXISTS CustomersIdx1 ON Customers(customer_postal_code, customer_id);")
     cursor.execute("CREATE INDEX IF NOT EXISTS OrdersIdx1 ON Orders(customer_id, order_id);")
+    cursor.execute("CREATE INDEX IF NOT EXISTS Order_itemsIdx1 ON Order_items(order_id);")
 
     # commit the changes we have made so they are visible by any other connections
     connection.commit()
@@ -77,7 +78,6 @@ def closeUniform():
 
     # cleaning up the tables, views and resetting the database
     cursor.execute("DROP TABLE OrderItemsNew;")
-    cursor.execute("DROP VIEW IF EXISTS OrderSize")
 
     cursor.execute("DROP TABLE Customers;")
     cursor.execute("DROP TABLE Orders;")
@@ -90,8 +90,6 @@ def closeUniform():
 
 def close():
     global connection, cursor
-
-    cursor.execute("DROP VIEW IF EXISTS OrderSize")
 
     # commiting and closing the connection
     connection.commit()
@@ -175,7 +173,6 @@ def query():
     mediumVals = [executionTimeUniformMedium, executionTimeSelfMedium, executionTimeUserMedium]
     largeVals = [executionTimeUniformLarge, executionTimeSelfLarge, executionTimeUserLarge]
 
-    print(smallVals, mediumVals, largeVals)
     # passing in the execution times to generate stacked graph
     stackedBar(smallVals, mediumVals, largeVals, "Q3")
 
@@ -196,7 +193,7 @@ def stackedBar(small, medium, large, title):
 
     ax.set_ylabel('Runtimes')
     ax.set_xlabel("Databases")
-    ax.set_title('Database Runtimes for Q2 in ms')
+    ax.set_title('Database Runtimes for Q3 in ms')
     ax.legend()
 
     path = './{}A3chart.png'.format(title)

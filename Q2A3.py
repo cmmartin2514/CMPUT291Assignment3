@@ -67,6 +67,7 @@ def connectUserOptimizied(path):
     # Creating indexes for the customers and orders tables
     cursor.execute("CREATE INDEX IF NOT EXISTS CustomersIdx1 ON Customers(customer_postal_code, customer_id);")
     cursor.execute("CREATE INDEX IF NOT EXISTS OrdersIdx1 ON Orders(customer_id, order_id);")
+    cursor.execute("CREATE INDEX IF NOT EXISTS Order_itemsIdx1 ON Order_items(order_id);")
 
     # commit the changes we have made so they are visible by any other connections
     connection.commit()
@@ -185,7 +186,6 @@ def query():
     mediumVals = [executionTimeUniformMedium, executionTimeSelfMedium, executionTimeUserMedium]
     largeVals = [executionTimeUniformLarge, executionTimeSelfLarge, executionTimeUserLarge]
 
-    print(smallVals, mediumVals, largeVals)
     # passing in the execution times to generate stacked graph
     stackedBar(smallVals, mediumVals, largeVals, "Q2")
 
