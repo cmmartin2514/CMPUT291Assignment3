@@ -80,6 +80,7 @@ def user_optimized():
 
 def execute(query):
     global c, conn
+    # execute the query 50 times and return avg time per query
     start = time.time()
     for i in range(50):
         c.execute(query)
@@ -90,6 +91,8 @@ def execute(query):
 def bar_chart(sc_1_values, sc_2_values, sc_3_values):
     # see matplotlib website for more details
     # https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.bar.html
+
+    # modified bar chart function from MicroAssignment 5
 
     width = 0.35
     labels = ["Small", "Medium", "Large"]
@@ -117,11 +120,13 @@ def bar_chart(sc_1_values, sc_2_values, sc_3_values):
 
 def main():
     global conn, c
+    # define sizes and query
     sizes = ["Small", "Medium", "Large"]
     query = "SELECT COUNT(DISTINCT S.seller_postal_code)" \
     + " FROM Order_items I, Sellers S" \
     + " WHERE I.order_id = (SELECT order_id FROM Orders ORDER BY RANDOM() LIMIT 1)" \
     + " AND I.seller_id = S.seller_id"
+    # define dict to store times
     times = {"Small":[0]*3, "Medium":[0]*3, "Large":[0]*3}
 
     for size in sizes:
@@ -134,12 +139,14 @@ def main():
         conn.commit()
         conn.close()
         connect(size)
+        # self-optimized scenario
         print("Self-Optimized scenario " + size)
         self_optimized()
         times[size][1] = execute(query)
         conn.commit()
         conn.close()
         connect(size)
+        # user-optimized scenario
         print("User-Optimized scenario " + size)
         user_optimized()
         times[size][2] = execute(query)
@@ -155,10 +162,12 @@ def main():
     print("Large: ")
     print([i for i in times["Large"]])
 
+    # create lists of scenario values for graph
     sc_1_values = [times[i][0]*1000 for i in sizes]
     sc_2_values = [times[i][1]*1000 for i in sizes]
     sc_3_values = [times[i][2]*1000 for i in sizes]
 
+    # create bar chart
     bar_chart(sc_1_values, sc_2_values, sc_3_values)
 
 if __name__ == "__main__":
